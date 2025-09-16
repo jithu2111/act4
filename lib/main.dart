@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+import 'painters/party_face_painter.dart';
+import 'painters/heart_painter.dart';
+
 void main() {
   runApp(const EmojiDrawingApp());
 }
@@ -107,9 +110,11 @@ class _EmojiHomeScreenState extends State<EmojiHomeScreen> {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black12, offset: Offset(0, 4))],
                       ),
-                      // Placeholder for CustomPaint - will be added in next commit
-                      child: const Center(
-                        child: Text('Emoji painters coming soon...', style: TextStyle(fontSize: 18)),
+                      child: CustomPaint(
+                        size: size,
+                        painter: _selected == EmojiType.party
+                            ? PartyFacePainter(scale: _scale, showConfetti: _confetti)
+                            : HeartPainter(scale: _scale),
                       ),
                     ),
                   );
