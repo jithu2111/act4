@@ -59,34 +59,52 @@ class HeartPainter extends CustomPainter {
     canvas.drawPath(path, outlinePaint);
 
     // Draw main fill with multiple gradients
+    // Base gradient with vibrant colors
     final mainPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFFFEE2E2), // Red 100
-          const Color(0xFFFCA5A5), // Red 300
-          const Color(0xFFEF4444), // Red 500
-          const Color(0xFFDC2626), // Red 600
+          const Color(0xFFFF3366), // Vibrant pink
+          const Color(0xFFFF0844), // Strong pink-red
+          const Color(0xFFFF0527), // Deep red
+          const Color(0xFFD70026), // Rich dark red
         ],
-        stops: const [0.0, 0.3, 0.6, 1.0],
+        stops: const [0.0, 0.4, 0.7, 1.0],
         center: const Alignment(-0.3, -0.5),
         radius: 1.4,
+        focal: const Alignment(-0.4, -0.3),
+        focalRadius: 0.1,
       ).createShader(path.getBounds())
       ..style = PaintingStyle.fill;
     canvas.drawPath(path, mainPaint);
 
-    // Add inner gradient for depth
-    final innerPaint = Paint()
+    // Add depth gradient
+    final depthPaint = Paint()
       ..shader = LinearGradient(
         colors: [
-          Colors.white.withOpacity(0.4),
-          Colors.white.withOpacity(0.1),
-          Colors.black.withOpacity(0.1),
+          const Color(0xFFFF99AA).withOpacity(0.6), // Light pink
+          const Color(0xFFFF3366).withOpacity(0.3), // Mid pink
+          const Color(0xFF800020).withOpacity(0.4), // Deep burgundy
         ],
         stops: const [0.0, 0.5, 1.0],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
       ).createShader(path.getBounds());
-    canvas.drawPath(path, innerPaint);
+    canvas.drawPath(path, depthPaint);
+
+    // Add metallic sheen
+    final sheenPaint = Paint()
+      ..shader = SweepGradient(
+        colors: [
+          Colors.white.withOpacity(0.0),
+          Colors.white.withOpacity(0.3),
+          Colors.white.withOpacity(0.0),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+        center: const Alignment(-0.3, -0.3),
+        startAngle: 0,
+        endAngle: pi * 2,
+      ).createShader(path.getBounds());
+    canvas.drawPath(path, sheenPaint);
 
     // Add highlight with better curve
     final highlightPath = Path();
