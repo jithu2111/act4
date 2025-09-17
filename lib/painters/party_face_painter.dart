@@ -15,18 +15,46 @@ class PartyFacePainter extends CustomPainter {
     final center = Offset(cx, cy);
 
     final faceRect = Rect.fromCircle(center: center, radius: faceRadius);
-    final facePaint = Paint()
-      ..shader = LinearGradient(
+    
+    // Base face gradient
+    final baseFacePaint = Paint()
+      ..shader = RadialGradient(
         colors: [
           const Color(0xFFFFE082), // Lighter Yellow
           const Color(0xFFFFC107), // Mid Yellow
-          const Color(0xFFE65100), // Dark Orange/Brown shadow
+          const Color(0xFFFFB300), // Darker Yellow
         ],
         stops: const [0.0, 0.7, 1.0],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
+        center: const Alignment(-0.2, -0.2),
+        radius: 1.2,
       ).createShader(faceRect);
-    canvas.drawCircle(center, faceRadius, facePaint);
+    canvas.drawCircle(center, faceRadius, baseFacePaint);
+    
+    // Overlay gradient for depth
+    final overlayPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.white.withOpacity(0.4),
+          Colors.white.withOpacity(0.1),
+          Colors.black.withOpacity(0.05),
+        ],
+        stops: const [0.0, 0.6, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(faceRect);
+    canvas.drawCircle(center, faceRadius, overlayPaint);
+    
+    // Highlight
+    final highlightPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.white.withOpacity(0.4),
+          Colors.white.withOpacity(0.0),
+        ],
+        center: const Alignment(-0.5, -0.5),
+        radius: 0.8,
+      ).createShader(faceRect);
+    canvas.drawCircle(center, faceRadius, highlightPaint);
 
 
     _drawEyesAndBrows(canvas, center, faceRadius);
@@ -157,60 +185,205 @@ class PartyFacePainter extends CustomPainter {
       ..lineTo(coneTop.dx, coneTop.dy)
       ..close();
 
+    // Add a slight curve to the cone sides for a more natural look
+    final curvedConePath = Path()
+      ..moveTo(coneLeft.dx, coneLeft.dy)
+      ..quadraticBezierTo(
+        center.dx - faceRadius * 0.1,
+        coneBaseY - faceRadius * 0.4,
+        coneTop.dx,
+        coneTop.dy,
+      )
+      ..quadraticBezierTo(
+        center.dx + faceRadius * 0.1,
+        coneBaseY - faceRadius * 0.4,
+        coneRight.dx,
+        coneRight.dy,
+      )
+      ..close();
 
-    final coneRect = conePath.getBounds();
+    final coneRect = curvedConePath.getBounds();
+    
+    // Base gradient for the cone
     final conePaint = Paint()
       ..shader = LinearGradient(
-        colors: [const Color(0xFF5C6BC0), const Color(0xFF3F51B5)],
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
+        colors: [
+          const Color(0xFF6366F1), // Indigo 500
+          const Color(0xFF4F46E5), // Indigo 600
+          const Color(0xFF4338CA), // Indigo 700
+        ],
+        stops: const [0.0, 0.5, 1.0],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ).createShader(coneRect);
-    canvas.drawPath(conePath, conePaint);
+      
+    // Add metallic effect with a sweep gradient
+    final metallicPaint = Paint()
+      ..shader = SweepGradient(
+        colors: [
+          Colors.white.withOpacity(0.3),
+          Colors.white.withOpacity(0.0),
+          Colors.white.withOpacity(0.3),
+        ],
+        stops: const [0.0, 0.5, 1.0],
+        center: Alignment.center,
+        startAngle: 0,
+        endAngle: pi * 2,
+      ).createShader(coneRect);
+    // Draw base cone with curved path
+    canvas.drawPath(curvedConePath, conePaint);
+    canvas.drawPath(curvedConePath, metallicPaint);
 
-
+    // Add stripes with gradient
     canvas.save();
-    canvas.clipPath(conePath);
-    final stripePaint = Paint()..color = const Color(0xFFEC407A);
+    canvas.clipPath(curvedConePath);
     final stripeHeight = faceRadius * 0.22;
+    final stripePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFFF472B6), // Pink 400
+          const Color(0xFFEC4899), // Pink 500
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(coneRect);
+
     for (int i = 0; i < 3; i++) {
-      final stripePath = Path()
-        ..moveTo(coneLeft.dx - 20, coneLeft.dy - (i * stripeHeight))
-        ..lineTo(coneRight.dx + 20, coneLeft.dy - (i * stripeHeight))
-        ..lineTo(coneRight.dx + 20, coneLeft.dy - (i * stripeHeight) - stripeHeight * 0.5)
-        ..lineTo(coneLeft.dx - 20, coneLeft.dy - (i * stripeHeight) - stripeHeight * 0.5)
-        ..close();
+      final stripePath = Path();
+      final y = coneLeft.dy - (i * stripeHeight);
+      final angle = -pi * 0.05; // Slight tilt for dynamic look
+      
+      stripePath.moveTo(
+        coneLeft.dx - 20 * cos(angle),
+        y - 20 * sin(angle),
+      );
+      stripePath.lineTo(
+        coneRight.dx + 20 * cos(angle),
+        y - 20 * sin(angle),
+      );
+      stripePath.lineTo(
+        coneRight.dx + 20 * cos(angle),
+        y - stripeHeight * 0.5 - 20 * sin(angle),
+      );
+      stripePath.lineTo(
+        coneLeft.dx - 20 * cos(angle),
+        y - stripeHeight * 0.5 - 20 * sin(angle),
+      );
+      stripePath.close();
+      
       canvas.drawPath(stripePath, stripePaint);
     }
     canvas.restore();
 
-    canvas.drawCircle(coneTop, faceRadius * 0.09, Paint()..color = const Color(0xFF3F51B5));
+    // Draw pom-pom with gradient and highlight
+    final pomPomPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFF818CF8), // Indigo 400
+          const Color(0xFF6366F1), // Indigo 500
+        ],
+        center: const Alignment(-0.2, -0.2),
+        radius: 1.0,
+      ).createShader(Rect.fromCircle(center: coneTop, radius: faceRadius * 0.09));
+    canvas.drawCircle(coneTop, faceRadius * 0.09, pomPomPaint);
+
+    // Add highlight to pom-pom
+    final pomPomHighlight = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.white.withOpacity(0.6),
+          Colors.white.withOpacity(0.0),
+        ],
+        center: const Alignment(-0.5, -0.5),
+        radius: 0.8,
+      ).createShader(Rect.fromCircle(
+        center: Offset(coneTop.dx - faceRadius * 0.02, coneTop.dy - faceRadius * 0.02),
+        radius: faceRadius * 0.05,
+      ));
     canvas.drawCircle(
       Offset(coneTop.dx - faceRadius * 0.02, coneTop.dy - faceRadius * 0.02),
       faceRadius * 0.05,
-      Paint()..color = const Color(0xFF9FA8DA),
+      pomPomHighlight,
     );
   }
 
 
   void _drawConfetti(Canvas canvas, Offset center, double faceRadius) {
     final confettiColors = [
-      Colors.blue, Colors.pink, Colors.green, Colors.orange, Colors.red
+      const Color(0xFF60A5FA), // Blue 400
+      const Color(0xFFF472B6), // Pink 400
+      const Color(0xFF34D399), // Emerald 400
+      const Color(0xFFFBBF24), // Amber 400
+      const Color(0xFFF87171), // Red 400
     ];
+    
     final rand = Random(42);
-    for (int i = 0; i < 20; i++) {
+    final now = DateTime.now().millisecondsSinceEpoch / 1000.0;
+    
+    for (int i = 0; i < 25; i++) {
+      // Add some wave motion to the confetti
+      final wave = sin(now + i) * faceRadius * 0.1;
       final p = Offset(
-        center.dx + (rand.nextDouble() - 0.5) * faceRadius * 3.5,
+        center.dx + (rand.nextDouble() - 0.5) * faceRadius * 3.5 + wave,
         center.dy + (rand.nextDouble() - 0.8) * faceRadius * 3,
       );
+      
       if ((p - center).distance < faceRadius * 1.2) continue;
 
-      final paint = Paint()..color = confettiColors[rand.nextInt(confettiColors.length)];
+      final baseColor = confettiColors[rand.nextInt(confettiColors.length)];
       final confettiSize = faceRadius * 0.08;
+      
+      // Create gradient paint for each confetti piece
+      final paint = Paint()
+        ..shader = LinearGradient(
+          colors: [
+            baseColor,
+            Color.lerp(baseColor, Colors.white, 0.6)!,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ).createShader(Rect.fromCenter(
+          center: Offset.zero,
+          width: confettiSize,
+          height: confettiSize,
+        ));
 
       canvas.save();
       canvas.translate(p.dx, p.dy);
-      canvas.rotate(rand.nextDouble() * pi);
-      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: confettiSize, height: confettiSize), paint);
+      
+      // Add rotation animation
+      final rotation = (now * 2 + i) % (pi * 2);
+      canvas.rotate(rotation);
+      
+      // Draw confetti with rounded corners
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: confettiSize,
+            height: confettiSize,
+          ),
+          Radius.circular(confettiSize * 0.2),
+        ),
+        paint,
+      );
+      
+      // Add sparkle effect
+      if (rand.nextDouble() < 0.3) {
+        final sparkleSize = confettiSize * 0.4;
+        final sparklePaint = Paint()
+          ..shader = RadialGradient(
+            colors: [
+              Colors.white.withOpacity(0.8),
+              Colors.white.withOpacity(0.0),
+            ],
+          ).createShader(Rect.fromCircle(
+            center: Offset.zero,
+            radius: sparkleSize,
+          ));
+        canvas.drawCircle(Offset.zero, sparkleSize, sparklePaint);
+      }
+      
       canvas.restore();
     }
   }
