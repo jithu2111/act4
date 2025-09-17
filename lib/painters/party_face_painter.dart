@@ -1,8 +1,3 @@
-// lib/painters/party_face_painter.dart
-// PartyFacePainter - polished version
-// Implemented by Partner B: <PartnerB Name> (GitHub: <partnerB-username>)
-// Minor polish: const constructors, helper extraction, gradient tweaks.
-
 import 'package:flutter/material.dart';
 import 'dart:math';
 
@@ -10,8 +5,6 @@ class PartyFacePainter extends CustomPainter {
   final double scale;
   final bool showConfetti;
 
-  /// [scale] adjusts the overall size of the drawing (1.0 = normal).
-  /// [showConfetti] toggles confetti rendering.
   const PartyFacePainter({this.scale = 1.0, this.showConfetti = true});
 
   @override
@@ -21,98 +14,204 @@ class PartyFacePainter extends CustomPainter {
     final faceRadius = min(size.width, size.height) * 0.35 * scale;
     final center = Offset(cx, cy);
 
-    // Face radial gradient (slightly warmer)
     final faceRect = Rect.fromCircle(center: center, radius: faceRadius);
     final facePaint = Paint()
-      ..shader = RadialGradient(
-        colors: [Colors.yellow.shade300, Colors.orange.shade300],
-        center: const Alignment(-0.15, -0.15),
-        radius: 0.9,
+      ..shader = LinearGradient(
+        colors: [
+          const Color(0xFFFFE082), // Lighter Yellow
+          const Color(0xFFFFC107), // Mid Yellow
+          const Color(0xFFE65100), // Dark Orange/Brown shadow
+        ],
+        stops: const [0.0, 0.7, 1.0],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
       ).createShader(faceRect);
     canvas.drawCircle(center, faceRadius, facePaint);
 
-    // Eyes
-    final eyePaint = Paint()..color = Colors.brown.shade900;
-    final eyeRadius = faceRadius * 0.12;
-    final eyeOffsetX = faceRadius * 0.45;
-    final eyeOffsetY = faceRadius * -0.15;
-    canvas.drawCircle(Offset(cx - eyeOffsetX, cy + eyeOffsetY), eyeRadius, eyePaint);
-    canvas.drawCircle(Offset(cx + eyeOffsetX, cy + eyeOffsetY), eyeRadius, eyePaint);
 
-    // Smile (arc)
-    final mouthRect = Rect.fromCircle(
-      center: Offset(cx, cy + faceRadius * 0.15),
-      radius: faceRadius * 0.6,
+    _drawEyesAndBrows(canvas, center, faceRadius);
+
+    final mouthCenter = Offset(cx + faceRadius * 0.1, cy + faceRadius * 0.25);
+    final mouthPaint = Paint()..color = const Color(0xFF5D4037);
+    canvas.drawArc(
+      Rect.fromCenter(
+          center: mouthCenter,
+          width: faceRadius * 0.25,
+          height: faceRadius * 0.25),
+      pi * 0.1,
+      pi * 0.8,
+      false,
+      mouthPaint..style = PaintingStyle.stroke..strokeWidth = faceRadius * 0.05,
     );
-    final mouthPaint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = faceRadius * 0.11
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(mouthRect, pi * 0.15, pi * 0.7, false, mouthPaint);
 
-    // Party hat (triangle) with improved gradient
-    final hatTop = Offset(cx, cy - faceRadius * 1.55);
-    final hatLeft = Offset(cx - faceRadius * 0.65, cy - faceRadius * 0.85);
-    final hatRight = Offset(cx + faceRadius * 0.65, cy - faceRadius * 0.85);
-    final hatPath = Path()..moveTo(hatLeft.dx, hatLeft.dy);
-    hatPath.lineTo(hatRight.dx, hatRight.dy);
-    hatPath.lineTo(hatTop.dx, hatTop.dy);
-    hatPath.close();
-    final hatRect = Rect.fromPoints(hatLeft, hatRight).inflate(faceRadius * 0.35);
-    final hatPaint = Paint()
-      ..shader = LinearGradient(
-        colors: [Colors.deepPurple, Colors.redAccent],
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-      ).createShader(hatRect);
-    canvas.drawPath(hatPath, hatPaint);
 
-    // pompom on hat
-    canvas.drawCircle(Offset(hatTop.dx, hatTop.dy + faceRadius * 0.06), faceRadius * 0.092, Paint()..color = Colors.white);
+    _drawConeHat(canvas, center, faceRadius);
+    _drawPartyBlower(canvas, mouthCenter, faceRadius);
 
-    // Confetti (draw via helper)
     if (showConfetti) {
       _drawConfetti(canvas, center, faceRadius);
     }
-
-    // cheek blush (softer)
-    final blushPaint = Paint()..color = Colors.pink.withOpacity(0.22);
-    canvas.drawCircle(Offset(cx - faceRadius * 0.55, cy + faceRadius * 0.1), faceRadius * 0.17, blushPaint);
-    canvas.drawCircle(Offset(cx + faceRadius * 0.55, cy + faceRadius * 0.1), faceRadius * 0.17, blushPaint);
   }
 
-  // Helper: draw confetti shapes around the hat area for visual flair.
-  void _drawConfetti(Canvas canvas, Offset center, double faceRadius) {
+
+  void _drawEyesAndBrows(Canvas canvas, Offset center, double faceRadius) {
     final cx = center.dx;
     final cy = center.dy;
-    final confettiColors = [Colors.blue, Colors.pink, Colors.green, Colors.orange, Colors.indigo];
-    final confettiCenters = <Offset>[
-      Offset(cx - faceRadius * 1.05, cy - faceRadius * 0.95),
-      Offset(cx - faceRadius * 0.55, cy - faceRadius * 1.22),
-      Offset(cx - faceRadius * 0.03, cy - faceRadius * 1.36),
-      Offset(cx + faceRadius * 0.45, cy - faceRadius * 1.16),
-      Offset(cx + faceRadius * 0.95, cy - faceRadius * 0.88),
-    ];
 
-    for (var i = 0; i < confettiCenters.length; i++) {
-      final c = confettiColors[i % confettiColors.length];
-      final p = confettiCenters[i];
-      final w = faceRadius * 0.12;
-      final h = faceRadius * 0.06;
-      final paint = Paint()..color = c;
-      // slight rotation for rectangles
-      if (i % 2 == 0) {
-        final rect = Rect.fromCenter(center: p, width: w, height: h);
-        canvas.save();
-        canvas.translate(p.dx, p.dy);
-        canvas.rotate((i - 2) * 0.25);
-        canvas.translate(-p.dx, -p.dy);
-        canvas.drawRect(rect, paint);
-        canvas.restore();
-      } else {
-        canvas.drawCircle(p, faceRadius * 0.055, paint);
-      }
+    final eyePaint = Paint()
+      ..color = const Color(0xFF5D4037)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = faceRadius * 0.08
+      ..strokeCap = StrokeCap.round;
+
+    final leftEyePath = Path();
+    leftEyePath.moveTo(cx - faceRadius * 0.55, cy - faceRadius * 0.1);
+    leftEyePath.quadraticBezierTo(
+        cx - faceRadius * 0.35, cy + faceRadius * 0.05,
+        cx - faceRadius * 0.15, cy - faceRadius * 0.1
+    );
+    canvas.drawPath(leftEyePath, eyePaint);
+
+    final rightEyePath = Path();
+    rightEyePath.moveTo(cx + faceRadius * 0.15, cy - faceRadius * 0.1);
+    rightEyePath.quadraticBezierTo(
+        cx + faceRadius * 0.35, cy + faceRadius * 0.05,
+        cx + faceRadius * 0.55, cy - faceRadius * 0.1
+    );
+    canvas.drawPath(rightEyePath, eyePaint);
+  }
+
+
+
+  void _drawPartyBlower(Canvas canvas, Offset blowerOrigin, double faceRadius) {
+    canvas.save();
+    canvas.translate(blowerOrigin.dx, blowerOrigin.dy);
+    canvas.rotate(0.1);
+
+    final tubeLength = faceRadius * 0.55;
+    final tubeWidth = faceRadius * 0.18;
+
+    final tubeRect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(tubeLength / 2, 0),
+        width: tubeLength,
+        height: tubeWidth,
+      ),
+      Radius.circular(tubeWidth / 2),
+    );
+    final tubePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [const Color(0xFF64B5F6), const Color(0xFF1976D2)],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(tubeRect.outerRect);
+    canvas.drawRRect(tubeRect, tubePaint);
+
+    final spotPaint = Paint()..color = const Color(0xFFEC407A);
+    for (int i = 0; i < 4; i++) {
+      canvas.drawCircle(
+        Offset((i * 0.15 + 0.1) * faceRadius, 0),
+        faceRadius * 0.04,
+        spotPaint,
+      );
+    }
+
+
+    final spiralCenter = Offset(tubeLength + faceRadius * 0.02, 0);
+    final spiralRect = Rect.fromCircle(center: spiralCenter, radius: faceRadius * 0.15);
+    final spiralPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [const Color(0xFFBA68C8), const Color(0xFF6A1B9A)],
+      ).createShader(spiralRect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = faceRadius * 0.12
+      ..strokeCap = StrokeCap.round;
+
+    final spiralPath = Path();
+    double startAngle = -pi / 2;
+    spiralPath.moveTo(
+      spiralCenter.dx + faceRadius * 0.1 * cos(startAngle),
+      spiralCenter.dy + faceRadius * 0.1 * sin(startAngle),
+    );
+    for (double i = 0; i < 3 * pi; i += 0.1) {
+      final r = faceRadius * 0.1 - (i * faceRadius * 0.008);
+      if (r < 0) break;
+      final angle = startAngle + i;
+      spiralPath.lineTo(spiralCenter.dx + r * cos(angle), spiralCenter.dy + r * sin(angle));
+    }
+    canvas.drawPath(spiralPath, spiralPaint);
+
+    canvas.restore();
+  }
+
+  void _drawConeHat(Canvas canvas, Offset center, double faceRadius) {
+    final coneTop = Offset(center.dx, center.dy - faceRadius * 1.4);
+    final coneBaseY = center.dy - faceRadius * 0.7;
+    final coneBaseWidth = faceRadius * 0.9;
+    final coneLeft = Offset(center.dx - coneBaseWidth / 2, coneBaseY);
+    final coneRight = Offset(center.dx + coneBaseWidth / 2, coneBaseY);
+
+    final conePath = Path()
+      ..moveTo(coneLeft.dx, coneLeft.dy)
+      ..lineTo(coneRight.dx, coneRight.dy)
+      ..lineTo(coneTop.dx, coneTop.dy)
+      ..close();
+
+
+    final coneRect = conePath.getBounds();
+    final conePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [const Color(0xFF5C6BC0), const Color(0xFF3F51B5)],
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+      ).createShader(coneRect);
+    canvas.drawPath(conePath, conePaint);
+
+
+    canvas.save();
+    canvas.clipPath(conePath);
+    final stripePaint = Paint()..color = const Color(0xFFEC407A);
+    final stripeHeight = faceRadius * 0.22;
+    for (int i = 0; i < 3; i++) {
+      final stripePath = Path()
+        ..moveTo(coneLeft.dx - 20, coneLeft.dy - (i * stripeHeight))
+        ..lineTo(coneRight.dx + 20, coneLeft.dy - (i * stripeHeight))
+        ..lineTo(coneRight.dx + 20, coneLeft.dy - (i * stripeHeight) - stripeHeight * 0.5)
+        ..lineTo(coneLeft.dx - 20, coneLeft.dy - (i * stripeHeight) - stripeHeight * 0.5)
+        ..close();
+      canvas.drawPath(stripePath, stripePaint);
+    }
+    canvas.restore();
+
+    canvas.drawCircle(coneTop, faceRadius * 0.09, Paint()..color = const Color(0xFF3F51B5));
+    canvas.drawCircle(
+      Offset(coneTop.dx - faceRadius * 0.02, coneTop.dy - faceRadius * 0.02),
+      faceRadius * 0.05,
+      Paint()..color = const Color(0xFF9FA8DA),
+    );
+  }
+
+
+  void _drawConfetti(Canvas canvas, Offset center, double faceRadius) {
+    final confettiColors = [
+      Colors.blue, Colors.pink, Colors.green, Colors.orange, Colors.red
+    ];
+    final rand = Random(42);
+    for (int i = 0; i < 20; i++) {
+      final p = Offset(
+        center.dx + (rand.nextDouble() - 0.5) * faceRadius * 3.5,
+        center.dy + (rand.nextDouble() - 0.8) * faceRadius * 3,
+      );
+      if ((p - center).distance < faceRadius * 1.2) continue;
+
+      final paint = Paint()..color = confettiColors[rand.nextInt(confettiColors.length)];
+      final confettiSize = faceRadius * 0.08;
+
+      canvas.save();
+      canvas.translate(p.dx, p.dy);
+      canvas.rotate(rand.nextDouble() * pi);
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: confettiSize, height: confettiSize), paint);
+      canvas.restore();
     }
   }
 
