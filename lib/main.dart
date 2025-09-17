@@ -301,7 +301,7 @@ class _EmojiHomeScreenState extends State<EmojiHomeScreen> with SingleTickerProv
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Tip: Adjust the size or toggle confetti for effects!',
+                      'Adjust the size or toggle confetti for effects!',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.primary,
                       ),
