@@ -10,46 +10,70 @@ class HeartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
-    final base = min(size.width, size.height) * 0.6 * scale;
+    final base = min(size.width, size.height) * 0.5 * scale;
+
 
     final path = Path();
-
-    path.moveTo(cx, cy + base * 0.25);
+    path.moveTo(cx, cy + base * 0.7);
 
 
     path.cubicTo(
-      cx + base * 0.6, cy - base * 0.35,
-      cx + base * 0.95, cy + base * 0.15,
-      cx, cy + base * 0.6,
+        cx + base * 1.5, cy - base * 0.5,
+        cx + base * 0.7, cy - base * 1.2,
+        cx, cy - base * 0.4
     );
 
-
     path.cubicTo(
-      cx - base * 0.95, cy + base * 0.15,
-      cx - base * 0.6, cy - base * 0.35,
-      cx, cy + base * 0.25,
+        cx - base * 0.7, cy - base * 1.2,
+        cx - base * 1.5, cy - base * 0.5,
+        cx, cy + base * 0.7
     );
     path.close();
 
-    final bounds = Rect.fromCenter(center: Offset(cx, cy), width: base, height: base);
-    final paint = Paint()
-      ..shader = LinearGradient(
-        colors: [Colors.pink.shade200, Colors.red.shade700],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        stops: const [0.0, 0.95],
-      ).createShader(bounds)
+
+    final outlinePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = base * 0.1
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(path, outlinePaint);
+
+
+    final fillPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          Colors.red.shade400,
+          Colors.red.shade800,
+        ],
+        center: const Alignment(-0.3, -0.5),
+        radius: 1.2,
+      ).createShader(path.getBounds())
       ..style = PaintingStyle.fill;
+    canvas.drawPath(path, fillPaint);
 
-    canvas.drawPath(path, paint);
 
 
-    final highlight = Paint()..color = Colors.white.withValues(alpha: 0.12);
-    final highlightPath = Path()
-      ..moveTo(cx, cy - base * 0.05)
-      ..cubicTo(cx + base * 0.18, cy - base * 0.18, cx + base * 0.45, cy - base * 0.05, cx + base * 0.15, cy + base * 0.05)
-      ..close();
-    canvas.drawPath(highlightPath, highlight);
+    final highlightPath = Path();
+    highlightPath.moveTo(cx - base * 0.55, cy - base * 0.7);
+    highlightPath.quadraticBezierTo(
+        cx - base * 0.1, cy - base * 0.9,
+        cx + base * 0.35, cy - base * 0.5
+    );
+    highlightPath.quadraticBezierTo(
+        cx + base * 0.1, cy - base * 0.2,
+        cx - base * 0.55, cy - base * 0.7
+    );
+
+    final highlightPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.white.withValues(alpha: 0.9),
+          Colors.white.withValues(alpha: 0.1),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(highlightPath.getBounds());
+    canvas.drawPath(highlightPath, highlightPaint);
   }
 
   @override
