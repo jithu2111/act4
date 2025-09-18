@@ -1,3 +1,7 @@
+// Team Members:
+// - Sanjay Reddy Choudapur
+// - Prajeeth Channa
+
 import 'package:flutter/material.dart';
 import 'dart:math';
 
